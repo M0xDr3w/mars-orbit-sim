@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 import astropy.units as u
 from astropy.constants import G, M_sun
+from matplotlib.animation import FuncAnimation, PillowWriter
 
 # Constants
 AU = 1.496e11 * u.m  # Astronomical Unit
@@ -76,5 +77,39 @@ plt.title('Hohmann Transfer Simulation: Bringing Mars Closer to Earth')
 plt.legend()
 plt.grid(True)
 plt.show()
+
+# Animation setup
+fig, ax = plt.subplots(figsize=(10, 10))
+ax.plot(0, 0, 'yo', label='Sun')
+ax.plot(sol_earth.y[0], sol_earth.y[1], color='blue', linestyle='-', label="Earth's Orbit")
+ax.plot(sol_final.y[0], sol_final.y[1], color='green', linestyle='-', label='Mars New Orbit')
+ax.axis('equal')
+ax.set_xlabel('X (m)')
+ax.set_ylabel('Y (m)')
+ax.set_title('Animated Hohmann Transfer: Bringing Mars Closer to Earth')
+ax.legend()
+ax.grid(True)
+
+# Mars position line and point
+mars_line, = ax.plot([], [], color='orange', linestyle='--', label='Transfer Path')
+mars_point, = ax.plot([], [], 'ro', label='Mars Position')
+
+def init():
+    mars_line.set_data([], [])
+    mars_point.set_data([], [])
+    return mars_line, mars_point
+
+def animate(i):
+    mars_line.set_data(sol_transfer.y[0][:i], sol_transfer.y[1][:i])
+    mars_point.set_data([sol_transfer.y[0][i-1]], [sol_transfer.y[1][i-1]])
+    return mars_line, mars_point
+
+# Create animation (500 frames for smooth, interval=20ms)
+anim = FuncAnimation(fig, animate, init_func=init, frames=len(sol_transfer.y[0]), interval=20, blit=True)
+
+# Save as GIF (optional, for sharing on GitHub)
+anim.save('mars_transfer.gif', writer=PillowWriter(fps=30))
+
+plt.show()  # Still show static if wanted
 
 print("Simulation completed successfully.")
